@@ -51,7 +51,7 @@ module.exports.run = async function ({ api, event, args }) {
 
         const userNames = await getUserNames(api, uid);
 
-        const responseMessage = `${result}\n👤 Question Asked by: ${userNames.join(', ')}`;
+        const responseMessage = `${result}\n\n👤 Question Asked by: ${userNames.join(', ')}`;
         api.sendMessage(responseMessage, event.threadID, event.messageID);
 
         await saveAxiosStatus(apiName);
@@ -81,7 +81,7 @@ module.exports.run = async function ({ api, event, args }) {
 
             const userNames = await getUserNames(api, uid);
 
-            const responseMessage = `${backupResult}\n👤 Question Asked by: ${userNames.join(', ')}`;
+            const responseMessage = `${backupResult}\n\n👤 Question Asked by: ${userNames.join(', ')}`;
             api.sendMessage(responseMessage, event.threadID, event.messageID);
 
             isPrimaryApiStable = false;
