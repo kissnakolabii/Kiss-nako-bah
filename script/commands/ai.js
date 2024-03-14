@@ -5,8 +5,8 @@ const storageFile = 'user_data.json';
 const chatRecordFile = 'chat_records.json';
 const axiosStatusFile = 'axios_status.json';
 
-const primaryApiUrl = 'https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/gpt';
-const secondaryApiUrl = 'https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/chatgpt';
+const primaryApiUrl = 'https://hercai.onrender.com/v3/hercai';
+const backupApiUrl = 'https://jonellccapis-dbe67c18fbcf.herokuapp.com/api/globalgpt';
 
 let isPrimaryApiStable = true;
 let axiosSwitchedMessageSent = false;
@@ -27,8 +27,8 @@ module.exports.run = async function ({ api, event, args }) {
     const content = encodeURIComponent(args.join(" "));
     const uid = event.senderID;
 
-    const apiUrl = isPrimaryApiStable ? `${primaryApiUrl}?prompt=${content}` : `${secondaryApiUrl}?input=${content}`;
-    const apiName = isPrimaryApiStable ? 'Original Axios' : 'Secondary Axios';
+    const apiUrl = isPrimaryApiStable ? `${primaryApiUrl}?question=${content}` : `${backupApiUrl}?content=${content}`;
+    const apiName = isPrimaryApiStable ? 'Original Axios' : 'Backup Axios';
 
     if (!content) return api.sendMessage("Please provide your question.\n\nExample: ai what is the solar system?", event.threadID, event.messageID);
 
@@ -36,27 +36,29 @@ module.exports.run = async function ({ api, event, args }) {
         api.sendMessage(`🔍 | AI is searching for your answer. Please wait...`, event.threadID, event.messageID);
 
         const response = await axios.get(apiUrl);
-        const result = isPrimaryApiStable ? response.data.result.gptResult.gpt : response.data.result;
+        const result = response.data.reply;
 
-        if (!result) {
+        if (result === undefined) {
             throw new Error("Axios response is undefined");
         }
 
         const userData = await getUserData(uid);
+        userData.requestCount = (userData.requestCount || 0) + 1;
         userData.responses = userData.responses || [];
         userData.responses.push({ question: content, response: result });
         await saveUserData(uid, userData, apiName);
 
         recordChat(uid, content);
 
+        const totalRequestCount = await getTotalRequestCount();
         const userNames = await getUserNames(api, uid);
 
-        const responseMessage = `${result}\n\n👤 Question Asked by: ${userNames.join(', ')}`;
+        const responseMessage = `${result}\n\n📝 Request Count: ${userData.requestCount}\n👤 Question Asked by: ${userNames.join(', ')}`;
         api.sendMessage(responseMessage, event.threadID, event.messageID);
 
         await saveAxiosStatus(apiName);
 
-        if (!isPrimaryApiStable && !axiosSwitchedMessageSent) {
+        if (apiName !== 'Original Axios' && !axiosSwitchedMessageSent) {
             isPrimaryApiStable = true;
             axiosSwitchedMessageSent = true;
             api.sendMessage("🔃 | Switching back to the original Axios. Just please wait.", event.threadID);
@@ -66,27 +68,29 @@ module.exports.run = async function ({ api, event, args }) {
         console.error(error);
 
         try {
-            api.sendMessage(`🔄 | Trying Switching API!\n\nReason: ${error.response.status || error.code}`, event.threadID);
-            const backupResponse = await axios.get(`${secondaryApiUrl}?input=${content}`);
-            const backupResult = backupResponse.data.result;
+            api.sendMessage("🔄 | Trying Switching Axios!", event.threadID);
+            const backupResponse = await axios.get(`${backupApiUrl}?content=${content}`);
+            const backupResult = backupResponse.data.content;
 
-            if (!backupResult) {
-                throw new Error("Secondary Axios response is undefined");
+            if (backupResult === undefined) {
+                throw new Error("Backup Axios response is undefined");
             }
 
             const userData = await getUserData(uid);
+            userData.requestCount = (userData.requestCount || 0) + 1;
             userData.responses = userData.responses || [];
             userData.responses.push({ question: content, response: backupResult });
-            await saveUserData(uid, userData, 'Secondary Axios');
+            await saveUserData(uid, userData, 'Backup Axios');
 
+            const totalRequestCount = await getTotalRequestCount();
             const userNames = await getUserNames(api, uid);
 
-            const responseMessage = `${backupResult}\n\n👤 Question Asked by: ${userNames.join(', ')}`;
+            const responseMessage = `${backupResult}\n\n📝 Request Count: ${userData.requestCount}\n👤 Question Asked by: ${userNames.join(', ')}`;
             api.sendMessage(responseMessage, event.threadID, event.messageID);
 
             isPrimaryApiStable = false;
 
-            await saveAxiosStatus('Secondary Axios');
+            await saveAxiosStatus('Backup Axios');
 
         } catch (backupError) {
             console.error(backupError);
@@ -116,6 +120,15 @@ async function saveUserData(uid, data, apiName) {
         await fs.writeFile(storageFile, JSON.stringify(allData, null, 2), 'utf-8');
     } catch (error) {
         console.error('Error saving user data:', error);
+    }
+}
+
+async function getTotalRequestCount() {
+    try {
+        const allData = await getAllUserData();
+        return Object.values(allData).reduce((total, userData) => total + (userData.requestCount || 0), 0);
+    } catch (error) {
+        return 0;
     }
 }
 
