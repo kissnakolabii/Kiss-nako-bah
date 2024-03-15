@@ -5,8 +5,8 @@ const storageFile = 'user_data.json';
 const chatRecordFile = 'chat_records.json';
 const axiosStatusFile = 'axios_status.json';
 
-const primaryApiUrl = 'https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/chatgpt';
-const backupApiUrl = 'https://hercai.onrender.com/v3/hercai';
+const primaryApiUrl = 'https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/ai';
+const backupApiUrl = 'https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/chatgpt';
 
 let isPrimaryApiStable = true;
 
@@ -27,8 +27,8 @@ module.exports = {
         const content = encodeURIComponent(args.join(" "));
         const uid = event.senderID;
 
-        const apiUrl = isPrimaryApiStable ? `${primaryApiUrl}?input=${content}` : `${backupApiUrl}?question=${content}`;
-        const apiName = isPrimaryApiStable ? 'Original Axios' : 'Backup Axios';
+        const apiUrl = isPrimaryApiStable ? `${primaryApiUrl}?query=${content}` : `${backupApiUrl}?input=${content}`;
+        const apiName = isPrimaryApiStable ? 'Primary Axios' : 'Backup Axios';
 
         if (!content) return api.sendMessage("Please provide your question.\n\nExample: ai what is the solar system?", event.threadID, event.messageID);
 
@@ -36,7 +36,7 @@ module.exports = {
             api.sendMessage(`🔍 | AI is searching for your answer. Please wait...`, event.threadID, event.messageID);
 
             const response = await axios.get(apiUrl);
-            const result = isPrimaryApiStable ? response.data.result : response.data.reply;
+            const result = isPrimaryApiStable ? response.data.airesponse : response.data.result;
 
             if (result === undefined) {
                 throw new Error("Axios response is undefined");
@@ -60,7 +60,7 @@ module.exports = {
 
             if (!isPrimaryApiStable) {
                 isPrimaryApiStable = true;
-                api.sendMessage("🔃 | Switching back to the original Axios. Just please wait.", event.threadID);
+                api.sendMessage("🔃 | Switching back to the primary Axios. Just please wait.", event.threadID);
             }
 
         } catch (error) {
@@ -68,8 +68,8 @@ module.exports = {
 
             try {
                 api.sendMessage("🔄 | Trying Switching Axios!", event.threadID);
-                const backupResponse = await axios.get(`${backupApiUrl}?question=${content}`);
-                const backupResult = backupResponse.data.reply;
+                const backupResponse = await axios.get(`${backupApiUrl}?input=${content}`);
+                const backupResult = backupResponse.data.result;
 
                 if (backupResult === undefined) {
                     throw new Error("Backup Axios response is undefined");
