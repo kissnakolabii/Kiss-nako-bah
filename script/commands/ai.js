@@ -5,7 +5,8 @@ const storageFile = 'user_data.json';
 const chatRecordFile = 'chat_records.json';
 const axiosStatusFile = 'axios_status.json';
 
-const primaryApiUrl = 'https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/ai';
+const primaryApiUrl = 'https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/v2/ai';
+
 const backupApiUrl = 'https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/chatgpt';
 
 let isPrimaryApiStable = true;
@@ -27,7 +28,7 @@ module.exports = {
         const content = encodeURIComponent(args.join(" "));
         const uid = event.senderID;
 
-        const apiUrl = isPrimaryApiStable ? `${primaryApiUrl}?query=${content}` : `${backupApiUrl}?input=${content}`;
+        const apiUrl = isPrimaryApiStable ? `${primaryApiUrl}?ask=${content}` : `${backupApiUrl}?input=${content}`;
         const apiName = isPrimaryApiStable ? 'Primary Axios' : 'Backup Axios';
 
         if (!content) return api.sendMessage("Please provide your question.\n\nExample: ai what is the solar system?", event.threadID, event.messageID);
@@ -36,7 +37,9 @@ module.exports = {
             api.sendMessage(`🔍 | AI is searching for your answer. Please wait...`, event.threadID, event.messageID);
 
             const response = await axios.get(apiUrl);
-            const result = isPrimaryApiStable ? response.data.airesponse : response.data.result;
+            
+            
+            const result = response.data.message;
 
             if (result === undefined) {
                 throw new Error("Axios response is undefined");
@@ -69,7 +72,9 @@ module.exports = {
             try {
                 api.sendMessage("🔄 | Trying Switching Axios!", event.threadID);
                 const backupResponse = await axios.get(`${backupApiUrl}?input=${content}`);
-                const backupResult = backupResponse.data.result;
+                
+                // Adjusted data parsing based on the new JSON structure
+                const backupResult = backupResponse.data.message;
 
                 if (backupResult === undefined) {
                     throw new Error("Backup Axios response is undefined");
