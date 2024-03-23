@@ -2,11 +2,9 @@ const axios = require('axios');
 const fs = require('fs').promises;
 
 const storageFile = 'user_data.json';
-const chatRecordFile = 'chat_records.json';
 const axiosStatusFile = 'axios_status.json';
 
-const primaryApiUrl = 'https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/v2/ai';
-
+const primaryApiUrl = 'https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/gptconvo';
 const backupApiUrl = 'https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/chatgpt';
 
 let isPrimaryApiStable = true;
@@ -28,7 +26,7 @@ module.exports = {
         const content = encodeURIComponent(args.join(" "));
         const uid = event.senderID;
 
-        const apiUrl = isPrimaryApiStable ? `${primaryApiUrl}?ask=${content}` : `${backupApiUrl}?input=${content}`;
+        const apiUrl = isPrimaryApiStable ? `${primaryApiUrl}?ask=${content}&id=${uid}` : `${backupApiUrl}?input=${content}&id=${uid}`;
         const apiName = isPrimaryApiStable ? 'Primary Axios' : 'Backup Axios';
 
         if (!content) return api.sendMessage("Please provide your question.\n\nExample: ai what is the solar system?", event.threadID, event.messageID);
@@ -37,11 +35,9 @@ module.exports = {
             api.sendMessage(`🔍 | AI is searching for your answer. Please wait...`, event.threadID, event.messageID);
 
             const response = await axios.get(apiUrl);
-            
-            
-            const result = response.data.message;
+            const result = isPrimaryApiStable ? response.data.response : response.data.result;
 
-            if (result === undefined) {
+            if (!result) {
                 throw new Error("Axios response is undefined");
             }
 
@@ -51,12 +47,10 @@ module.exports = {
             userData.responses.push({ question: content, response: result });
             await saveUserData(uid, userData, apiName);
 
-            recordChat(uid, content);
-
             const totalRequestCount = await getTotalRequestCount();
             const userNames = await getUserNames(api, uid);
 
-            const responseMessage = `${result}\n\n📝 Request Count: ${userData.requestCount}\n👤 Question Asked by: ${userNames.join(', ')}`;
+            const responseMessage = `${result}\n\n👤 Question Asked by: ${userNames.join(', ')}`;
             api.sendMessage(responseMessage, event.threadID, event.messageID);
 
             await saveAxiosStatus(apiName);
@@ -71,12 +65,10 @@ module.exports = {
 
             try {
                 api.sendMessage("🔄 | Trying Switching Axios!", event.threadID);
-                const backupResponse = await axios.get(`${backupApiUrl}?input=${content}`);
-                
-                // Adjusted data parsing based on the new JSON structure
-                const backupResult = backupResponse.data.message;
+                const backupResponse = await axios.get(`${backupApiUrl}?input=${content}&id=${uid}`);
+                const backupResult = backupResponse.data.result;
 
-                if (backupResult === undefined) {
+                if (!backupResult) {
                     throw new Error("Backup Axios response is undefined");
                 }
 
@@ -89,7 +81,7 @@ module.exports = {
                 const totalRequestCount = await getTotalRequestCount();
                 const userNames = await getUserNames(api, uid);
 
-                const responseMessage = `${backupResult}\n\n📝 Request Count: ${userData.requestCount}\n👤 Question Asked by: ${userNames.join(', ')}`;
+                const responseMessage = `${backupResult}\n\n👤 Question Asked by: ${userNames.join(', ')}`;
                 api.sendMessage(responseMessage, event.threadID, event.messageID);
 
                 isPrimaryApiStable = false;
@@ -150,27 +142,6 @@ async function getUserNames(api, uid) {
 async function getAllUserData() {
     try {
         const data = await fs.readFile(storageFile, 'utf-8');
-        return JSON.parse(data) || {};
-    } catch (error) {
-        return {};
-    }
-}
-
-function recordChat(uid, question) {
-    try {
-        const chatRecords = getChatRecords();
-        const userChat = chatRecords[uid] || [];
-        userChat.push({ timestamp: Date.now(), question });
-        chatRecords[uid] = userChat;
-        fs.writeFile(chatRecordFile, JSON.stringify(chatRecords, null, 2), 'utf-8');
-    } catch (error) {
-        console.error('Error recording chat:', error);
-    }
-}
-
-function getChatRecords() {
-    try {
-        const data = fs.readFileSync(chatRecordFile, 'utf-8');
         return JSON.parse(data) || {};
     } catch (error) {
         return {};
