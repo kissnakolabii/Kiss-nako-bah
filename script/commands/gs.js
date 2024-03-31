@@ -16,7 +16,7 @@ module.exports.run = async function ({ api, event, args }) {
     const content = args.join(" ");
 
     try {
-        const response = await axios.get(`https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/gs?query=${content}`);
+        const response = await axios.get(`https://jonellccprojectapis.onrender.com/api/gs?q=${content}`);
         const results = response.data.organicResults;
 
         if (results && results.length > 0) {
