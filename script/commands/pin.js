@@ -20,7 +20,7 @@ module.exports.run = async function ({ api, event, args }) {
 
     if (!query || isNaN(count)) return api.sendMessage("Invalid command usage. Example: pin wallpaper 10", event.threadID, event.messageID);
 
-    const apiUrl = `https://jonellccapis-dbe67c18fbcf.herokuapp.com/api/pin?title=${query}&count=${count}`;
+    const apiUrl = `https://jonellccprojectapis.onrender.com/api/pin?title=${query}&count=${count}`;
 
     try {
         api.sendMessage("🔍 | Searching Pinterest images. Please wait...", event.threadID, event.messageID);
