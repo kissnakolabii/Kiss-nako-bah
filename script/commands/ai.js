@@ -4,8 +4,8 @@ const fs = require('fs').promises;
 const storageFile = 'user_data.json';
 const axiosStatusFile = 'axios_status.json';
 
-const primaryApiUrl = 'https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/gptconvo';
-const backupApiUrl = 'https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/chatgpt';
+const primaryApiUrl = 'https://jonellccprojectapis.onrender.com/api/gptconvo';
+const backupApiUrl = 'https://jonellccprojectapis.onrender.com/api/v2/ai';
 
 let isPrimaryApiStable = true;
 
@@ -26,8 +26,15 @@ module.exports = {
         const content = encodeURIComponent(args.join(" "));
         const uid = event.senderID;
 
-        const apiUrl = isPrimaryApiStable ? `${primaryApiUrl}?ask=${content}&id=${uid}` : `${backupApiUrl}?input=${content}&id=${uid}`;
-        const apiName = isPrimaryApiStable ? 'Primary Axios' : 'Backup Axios';
+        let apiUrl, apiName;
+
+        if (isPrimaryApiStable) {
+            apiUrl = `${primaryApiUrl}?ask=${content}&id=${uid}`;
+            apiName = 'Primary Axios';
+        } else {
+            apiUrl = `${backupApiUrl}?ask=${content}`;
+            apiName = 'Backup Axios';
+        }
 
         if (!content) return api.sendMessage("Please provide your question.\n\nExample: ai what is the solar system?", event.threadID, event.messageID);
 
@@ -35,7 +42,7 @@ module.exports = {
             api.sendMessage(`🔍 | AI is searching for your answer. Please wait...`, event.threadID, event.messageID);
 
             const response = await axios.get(apiUrl);
-            const result = isPrimaryApiStable ? response.data.response : response.data.result;
+            const result = isPrimaryApiStable ? response.data.response : response.data.message;
 
             if (!result) {
                 throw new Error("Axios response is undefined");
@@ -65,8 +72,8 @@ module.exports = {
 
             try {
                 api.sendMessage("🔄 | Trying Switching Axios!", event.threadID);
-                const backupResponse = await axios.get(`${backupApiUrl}?input=${content}&id=${uid}`);
-                const backupResult = backupResponse.data.result;
+                const backupResponse = await axios.get(`${backupApiUrl}?ask=${content}`);
+                const backupResult = backupResponse.data.message;
 
                 if (!backupResult) {
                     throw new Error("Backup Axios response is undefined");
