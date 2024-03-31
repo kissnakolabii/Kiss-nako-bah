@@ -22,7 +22,7 @@ module.exports.run = async ({ api, event, args }) => {
   try {
     api.sendMessage("⏳ | Removing background from your image...", threadID, messageID);
 
-    const response = await axios.get(`https://jonellccapisproject-e1a0d0d91186.herokuapp.com/api/rbg?imageUrl=${encodeURIComponent(photoLink)}`);
+    const response = await axios.get(`https://jonellccprojectapis.onrender.com/api/rbg?imageUrl=${encodeURIComponent(photoLink)}`);
     const removedBgImageUrl = response.data.image_data;
 
     const imgResponse = await axios.get(removedBgImageUrl, { responseType: "stream" });
