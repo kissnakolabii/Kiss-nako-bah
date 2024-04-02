@@ -24,11 +24,11 @@ module.exports.run = async function({ api, event, Users, Threads }) {
     const type = (event.author == event.logMessageData.leftParticipantFbId) ? "left the group." : "kicked by Admin of the group";
     let pathh = __dirname + `/cache/bye.png`;
     let name = (await api.getUserInfo(event.logMessageData.leftParticipantFbId))[event.logMessageData.leftParticipantFbId].name;
-    let avt = ["https://i.postimg.cc/NG8bzNng/5f72fa7bca49768489ca59d27332defa.jpg", "https://i.postimg.cc/4NScLVXf/8ab4bc55a2d413b2b589c1c0103045d7.jpg", "https://i.postimg.cc/4xcYW08P/af472054e9e551af3a5295c47192ffda.jpg", "https://i.postimg.cc/RVLSqzbj/5f48a6f71dceb60103ba40b6e67ac15f.jpg"];
+    let avt = ["https://i.postimg.cc/wMWZwp7p/images-2024-04-02-T195017-832.jpg", "https://i.postimg.cc/4xXwmMdv/images-2024-04-02-T195026-517.jpg", "https://i.postimg.cc/kGc6Zjm9/images-2024-04-02-T195041-233.jpg", "https://i.postimg.cc/5Ny2b958/images-2024-04-02-T195048-119.jpg"];
     let avt1 = avt[Math.floor(Math.random() * avt.length)];
     const firstName = name.split(" ")[0]; // Extracting the first name
 
-    let encodedUrl = `https://leavecanvasapibyjonell-5715724d201c.herokuapp.com/leave?name=${firstName}&id=${event.logMessageData.leftParticipantFbId}&background=${avt1}&count=${participantIDs.length}`;
+    let encodedUrl = `https://leavev2byjonellmagallanes-c0af5f501196.herokuapp.com/leave?name=${firstName}&id=${event.logMessageData.leftParticipantFbId}&background=${avt1}&count=${participantIDs.length}`;
 
     axios.get(encodeURI(encodedUrl), { responseType: 'arraybuffer' })
         .then(response => {
