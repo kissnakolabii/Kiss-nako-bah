@@ -6,7 +6,7 @@ module.exports.config = {
   description: "𝙶𝙴𝙽𝙴𝚁𝙰𝚃𝙴 𝚁𝙰𝙽𝙳𝙾𝙼 𝙷𝙾𝚃 𝚂𝙷𝙾𝚃𝙸 𝙾𝙽 𝚃𝙸𝙺𝚃𝙾𝙺.",
   commandCategory: "Entertainment",
   usage: "[]",
-  cooldowns: 0,
+  cooldowns: 10s,
   usePrefix: false,
   dependencies: {}
 };
